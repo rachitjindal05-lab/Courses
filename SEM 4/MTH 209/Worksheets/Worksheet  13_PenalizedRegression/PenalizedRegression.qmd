@@ -1,0 +1,126 @@
+---
+title: "MTH209: Worksheet 13"
+format: 
+  pdf:
+    documentclass: article
+editor: visual
+geometry: margin=1in
+header-includes:
+   - \usepackage{amsmath, amssymb, setspace}
+   - \onehalfspacing
+   - \usepackage{etoolbox} 
+   - \makeatletter 
+   - \preto{\@verbatim}{\topsep=3pt \partopsep=3pt } 
+   - \makeatother
+---
+
+## Penalized Regression
+
+### Ridge regression
+
+The ridge regression estimator is defined, for a user-chosen $\lambda \geq 0$ as,
+
+$$
+\hat{\beta}_{\text{OLS}} = \arg\min_{\beta \in \mathbb{R}^p} \left\{ (y - X \beta)^{\top} (y - X \beta)   + \lambda\beta^{\top}\beta\right\}.
+$$
+
+It is an homework to show that in this case, there is a closed-form solution:
+
+$$
+\hat{\beta}_{\text{ridge}} = (X^\top X + \lambda I_p)^{-1} X^\top y,
+$$
+
+where $\lambda \ge 0$ is a regularization parameter that controls the amount of shrinkage/bias. Equivalently, it can be viewed as the solution to the constrained problem
+
+$$
+\min_\beta \| y - X\beta \|^2 \quad \text{subject to } \|\beta\|^2 \le t,
+$$
+
+for some $t > 0$. Large $\lambda$ corresponds to a tighter constraint (smaller $t$). Further,
+
+-   As $\lambda \to 0$, $\hat{\beta}_{\text{ridge}} \to \hat{\beta}_{\text{OLS}}$.\
+-   As $\lambda \to \infty$, $\hat{\beta}_{\text{ridge}} \to 0$.
+
+Ridge regression thus introduces bias but is useful because it can substantially reduces variance, particularly in directions where $X$ is ill-conditioned. The overall mean squared error (MSE) can therefore be smaller than that of the unbiased OLS estimator. We will see this in a simulation.
+
+### The Lasso and Sparsity in Linear Models
+
+The Lasso (Least Absolute Shrinkage and Selection Operator) is a regularization method for linear regression that performs both coefficient shrinkage and variable selection.
+
+Consider the linear model
+
+$$
+y = X \beta + \epsilon, \quad \epsilon \sim \mathcal{N}(0, \sigma^2 I_n),
+$$
+
+where $X$ is an $n \times p$ design matrix and $\beta$ is a vector of coefficients. The Lasso estimator is defined as
+
+$$
+\hat{\beta}_{\text{lasso}} 
+= \arg\min_\beta \Big( \|y - X\beta\|^2 + \lambda \|\beta\|_1 \Big),
+$$
+
+where $\|\beta\|_1 = \sum_{j=1}^p |\beta_j|$ and $\lambda \ge 0$ is a tuning parameter controlling sparsity.
+
+Equivalently, it can be written as the constrained problem
+
+$$
+\min_\beta \|y - X\beta\|^2 
+\quad \text{subject to } \|\beta\|_1 \le \sqrt{t},
+$$
+
+for some $t > 0$ corresponding to $\lambda$. The Lasso differs from ridge regression in the geometry of its constraint set. The $\ell_1$-ball $\{ \beta : \|\beta\|_1 \le t \}$ has corners aligned with the coordinate axes, while the ridge ($\ell_2$) constraint $\{ \beta : \|\beta\|_2 \le t \}$ is smooth and circular. Contours of the least-squares objective are ellipsoids centered at the ordinary least squares (OLS) solution.
+
+The Lasso solution occurs where these ellipsoids first touch the $\ell_1$-ball, which often happens at a corner, **forcing some coefficients to be exactly zero.**
+
+Unlike ridge regression, the Lasso has no closed-form solution. But geometrically, the Lasso introduces bias even for large signal coefficients, since the $\ell_1$ penalty shrinks all coefficients by a constant amount rather than proportionally. However, by eliminating irrelevant predictors, the Lasso often achieves a lower prediction variance than OLS or ridge regression in high-dimensional settings.
+
+-   The $\ell_1$ penalty yields sparse models by pushing some coefficients exactly to zero.
+-   The resulting estimator trades additional bias for potentially large variance reduction when $p$ is large or predictors are correlated.
+-   When predictors are highly correlated, Lasso tends to select one variable from each correlated group.
+-   Ridge regression, by contrast, never sets coefficients exactly to zero but distributes shrinkage smoothly across correlated directions.
+
+## Questions (only on Ridge)
+
+1.  Let us first simulate fake data according to the linear regression model $y = X \beta + \epsilon$. This can be done by fixing $\beta$ and generating a random $X$ and then drawing the response $y$ from a normal.
+
+    ```{r}
+    #| eval: false
+    set.seed(1)
+    n <- 50
+    p <- 5
+    beta.star <- c(-.5, .3, 1, 5, -2)
+
+    # Making design matrix
+    X <- matrix(rnorm(n*p), nrow = n, ncol = p)
+
+    # Generating response
+    y <-  X %*% beta.star + rnorm(n, mean = 0, sd = 1)
+    ```
+
+    a.  Calculate the OLS estimator of $\beta$.
+    b.  For $\lambda = 1$ calculate the Ridge estimator of $\beta$.
+    c.  For $\lambda = 10$ calculate the Ridge estimator of \$\\beta.
+    d.  What do you observe in b and c?
+
+2.  We discussed that ridge regression estimator is biased. Let us \`\`verify'' this. First, let us simulate a 1-dimensional problem:
+
+    ```{r}
+    #| eval: false
+    n <- 50
+    p <- 1
+    beta.star <- c(1)  # btrue beta is 1
+
+    # Making design matrix
+    X <- matrix(rnorm(n*p), nrow = n, ncol = p)
+
+    # Generating response
+    y <-  X %*% beta.star + rnorm(n, mean = 0, sd = 1)
+    ```
+
+    a.  Set up a simulation study to verify that OLS is unbiased.
+    b.  For $\lambda = 10$ set up a simulation study to verify that ridge regression is unbiased.
+
+3.  Repeat the exercise in 2. to conclude that ridge regression estimator of $\beta$ has smaller variance.
+
+4.  Finally, set up a simulation study to calculate the mean squared error of OLS and Ridge regression estimators for various values of $\lambda$ and draw a plot of the MSE of Ridge versus $\lambda$, along with the OLS MSE as a horizontal line. What do you conclude?
